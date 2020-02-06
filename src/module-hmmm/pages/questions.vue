@@ -1,6 +1,12 @@
 <template>
   <div class="dashboard-container">
     <div class="app-container">
+      <el-row>
+        <el-col>
+          <el-button type="primary" size="mini" @click="$router.push('/questions/new')">新增试题</el-button>
+          <el-button type="danger" size="mini">批量导入</el-button>
+        </el-col>
+      </el-row>
       <el-card class="box-card">
         <!-- :gutter 给各个col设置间歇，单位是像素 -->
         <el-row :gutter="20">
@@ -116,7 +122,7 @@
           </el-col>
         </el-row>
       </el-card>
-      <el-table :data="questionList" style="width:100%"  border>
+      <el-table :data="questionList" style="width:100%" border>
         <el-table-column label="序号" type="index" width="60"></el-table-column>
         <el-table-column label="试题编号" prop="number"></el-table-column>
         <el-table-column label="学科" prop="subject"></el-table-column>
@@ -128,10 +134,13 @@
         <el-table-column label="难度" :formatter="difficultyFMT" prop="difficulty"></el-table-column>
         <el-table-column label="录入人" prop="creator"></el-table-column>
         <el-table-column label="操作" width="200">
-          <a href="#">预览</a>
-          <a href="#">修改</a>
-          <a href="#">删除</a>
-          <a href="#">加入精选</a>
+          <template slot-scope="stData">
+            <a href="#">预览</a>
+            <a href="#">修改</a>
+            <a href="#" @click.prevent="del(stData.row)">删除</a>
+            <!-- prevent组织默认事件 时间修饰符还有stop -->
+            <a href="#">加入精选</a>
+          </template>
         </el-table-column>
       </el-table>
     </div>
@@ -144,7 +153,7 @@ import { simple as simpletags } from '@/api/hmmm/tags.js' // 标签获取方法�
 import { simple as usersSimple } from '@/api/base/users' // 获取录入人信息方法导入
 import { simple as directorysSimple } from '@/api/hmmm/directorys' // 获取二级目录信息方法导入
 import { provinces, citys } from '@/api/hmmm/citys' // 获取 省份/城市 信息方法导入
-import { list } from '@/api/hmmm/questions' // 基础题库相关api导入
+import { list, remove } from '@/api/hmmm/questions' // 基础题库相关api导入
 import {
   direction as directionList,
   difficulty as difficultyList,
@@ -181,6 +190,21 @@ export default {
     }
   },
   methods: {
+    // 删除功能
+    del(data) {
+      this.$confirm('此操作将永久删除该文件, 是否继续?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      })
+        .then(async () => {
+          this.$message.success('删除成功!')
+          await remove(data)
+          // 刷新页面
+          this.getQuestionList()
+        })
+        .catch()
+    },
     // 难度数字转汉字
     difficultyFMT(row, column, cellValue, index) {
       return this.difficultyList[cellValue - 1].label
@@ -238,9 +262,9 @@ export default {
   },
   watch: {
     sreachForm: {
-      handler: function (newV, oldV) {
-         // 获取精选题库
-       this.getQuestionList()
+      handler: function(newV, oldV) {
+        // 获取精选题库
+        this.getQuestionList()
       },
       deep: true
     }
